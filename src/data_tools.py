@@ -1,4 +1,5 @@
 import json
+import pprint
 
 with open("data/scraped_data.json", "r") as f:
     data = json.load(f)
@@ -11,5 +12,5 @@ for name, product in data.items():
         max_price = product["price"].strip("$").replace(",", "")
         max_product = product
 
-print(max_product)
+print(pprint.pformat(max_product))
 # print(name, product)
