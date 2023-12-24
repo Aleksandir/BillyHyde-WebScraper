@@ -19,6 +19,7 @@ def scrape_data(url: str):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
+    page_product_info = {}
     for Product in soup.find_all("div", {"class": "product-item-info"}):
         name = Product.find("span", {"class": "product-name"}).find("a").text.strip()
         price = Product.find("span", {"class": "price"}).text.strip()
@@ -32,7 +33,10 @@ def scrape_data(url: str):
             "url": url,
         }
 
-    return data
+        # Use the name as the key for the dictionary
+        page_product_info[name] = data
+
+    return page_product_info
 
 
 def main():
@@ -44,11 +48,12 @@ def main():
     all_data = []
     for link in links:
         data = scrape_data(link)
-        all_data.append(data)
+        for product in data.values():
+            all_data.append(product)
 
     # Save data to file
     with open("data/scraped_data.json", "w") as f:
-        json.dump(all_data, f, indent=4)
+        json.dump(all_data, f, indent=2)
 
 
 if __name__ == "__main__":
