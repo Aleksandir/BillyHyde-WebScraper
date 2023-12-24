@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from bs4 import BeautifulSoup
@@ -49,7 +50,38 @@ def scrape_data(url: str) -> tuple[dict[str, Product], bool]:
 LINK_MANIPULATION = "?p=120&product_list_limit=36"
 
 
+def scrape_and_add_data(link):
+    """
+    Scrapes data from a given link and adds it to a dictionary.
+
+    Args:
+        link (str): The URL of the webpage to scrape.
+
+    Returns:
+        dict: A dictionary containing the scraped data, where the keys are the names and the values are the products.
+    """
+    data, next_page_exist = scrape_data(link)
+    page_data = {}
+    for name, product in data.items():
+        page_data[name] = product
+    if next_page_exist:
+        page_number = 2
+        # bug: doesn't stop when there are no more pages
+        while next_page_exist:
+            data, next_page_exist = scrape_data(
+                link + f"?p={page_number}&product_list_limit=36"
+            )
+            for name, product in data.items():
+                page_data[name] = product
+            page_number += 1
+            print(f"Scraping page {page_number} of {link}...")
+    return page_data
+
+
 def main():
+    # todo: for each link in links.txt, find the number of pages so that tqdm can be used
+    # todo: for each page where the number is checked, save the soup to a file so that another request doesn't have to be made
+
     # Load links from file
     with open("src/links.txt", "r") as f:
         links = [line.strip() for line in f]
@@ -57,20 +89,18 @@ def main():
     # Scrape data from each link
     all_data = {}
     print("Scraping data...")
-    for link in links:
-        data, next_page_exist = scrape_data(link)
-        for name, product in data.items():
-            all_data[name] = product
-        if next_page_exist:
-            page_number = 2
-            while next_page_exist:
-                data, next_page_exist = scrape_data(
-                    link + f"?p={page_number}&product_list_limit=36"
-                )
-                for name, product in data.items():
-                    all_data[name] = product
-                page_number += 1
-                print(f"Scraping page {page_number}...")
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_link = {
+            executor.submit(scrape_and_add_data, link): link for link in links
+        }
+        for future in concurrent.futures.as_completed(future_to_link):
+            link = future_to_link[future]
+            try:
+                data = future.result()
+            except Exception as exc:
+                print(f"{link} generated an exception: {exc}")
+            else:
+                all_data.update(data)
 
     # Check for duplicates
     print("Checking for duplicates...")
