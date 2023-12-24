@@ -7,6 +7,7 @@ def scrape_links(url):
     soup = BeautifulSoup(response.text, "html.parser")
 
     links = []
+    # using data-color attribute to filter out specific links to increase efficiency
     for link in soup.find_all("a", {"class": "nav-anchor", "data-color": "#ffffff"}):
         href = link.get("href")
         print(href)
