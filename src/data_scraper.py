@@ -2,6 +2,7 @@ import json
 
 import requests
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
 class Product:
@@ -15,7 +16,8 @@ class Product:
         return f"<Product name={self.name} price={self.price} sku={self.sku} url={self.url}>"
 
 
-def scrape_data(url: str):
+def scrape_data(url: str) -> tuple[dict[str, Product], bool]:
+    # https://billyhydemusic.com.au/product-category/guitar-bass?p=2&product_list_limit=36
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -36,7 +38,15 @@ def scrape_data(url: str):
         # Use the name as the key for the dictionary
         page_product_info[name] = data
 
-    return page_product_info
+    # Check if there is a next page
+    next_page = False
+    if soup.find("a", {"class": "action next"}):
+        next_page = True
+
+    return page_product_info, next_page
+
+
+LINK_MANIPULATION = "?p=120&product_list_limit=36"
 
 
 def main():
@@ -45,11 +55,35 @@ def main():
         links = [line.strip() for line in f]
 
     # Scrape data from each link
-    all_data = []
+    all_data = {}
+    print("Scraping data...")
     for link in links:
-        data = scrape_data(link)
-        for product in data.values():
-            all_data.append(product)
+        data, next_page_exist = scrape_data(link)
+        for name, product in data.items():
+            all_data[name] = product
+        if next_page_exist:
+            page_number = 2
+            while next_page_exist:
+                data, next_page_exist = scrape_data(
+                    link + f"?p={page_number}&product_list_limit=36"
+                )
+                for name, product in data.items():
+                    all_data[name] = product
+                page_number += 1
+                print(f"Scraping page {page_number}...")
+
+    # Check for duplicates
+    print("Checking for duplicates...")
+    seen_names = set()
+    duplicates = set()
+    for name in tqdm(all_data):
+        if name in seen_names:
+            duplicates.add(name)
+        else:
+            seen_names.add(name)
+
+    if duplicates:
+        print(f"Duplicate products found: {duplicates}")
 
     # Save data to file
     with open("data/scraped_data.json", "w") as f:
