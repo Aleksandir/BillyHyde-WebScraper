@@ -5,6 +5,17 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 
+class Product:
+    def __init__(self, name: str, price: float, sku: str, url: str):
+        self.name = name
+        self.price = price
+        self.sku = sku
+        self.url = url
+
+    def __repr__(self):
+        return f"<Product name={self.name} price={self.price} sku={self.sku} url={self.url}>"
+
+
 def scrape_data(url: str) -> tuple[dict[str, Product], bool]:
     """
     Scrapes data from a given URL and returns a tuple containing a dictionary of product information and a boolean indicating if there is a next page.
