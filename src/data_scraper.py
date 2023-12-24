@@ -1,5 +1,4 @@
 import json
-from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from bs4 import BeautifulSoup
@@ -18,6 +17,15 @@ class Product:
 
 
 def scrape_data(url: str) -> tuple[dict[str, Product], bool]:
+    """
+    Scrapes data from a given URL and returns a tuple containing a dictionary of product information and a boolean indicating if there is a next page.
+
+    Args:
+        url (str): The URL to scrape data from.
+
+    Returns:
+        tuple[dict[str, Product], bool]: A tuple containing a dictionary of product information and a boolean indicating if there is a next page.
+    """
     # https://billyhydemusic.com.au/product-category/guitar-bass?p=2&product_list_limit=36
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -60,21 +68,38 @@ def scrape_and_add_data(link):
     Returns:
         dict: A dictionary containing the scraped data, where the keys are the names and the values are the products.
     """
+    # Call the scrape_data function to get the initial data and check if there is a next page
     data, next_page_exist = scrape_data(link)
+
+    # Create an empty dictionary to store the scraped data
     page_data = {}
+
+    # Iterate over the data dictionary and add each name and product to the page_data dictionary
     for name, product in data.items():
         page_data[name] = product
+
+    # Check if there is a next page
     if next_page_exist:
         page_number = 2
-        # bug: doesn't stop when there are no more pages
+
+        # Continue scraping until there are no more pages
         while next_page_exist:
+            # Call the scrape_data function with the URL of the next page
             data, next_page_exist = scrape_data(
                 link + f"?p={page_number}&product_list_limit=36"
             )
+
+            # Iterate over the data dictionary and add each name and product to the page_data dictionary
             for name, product in data.items():
                 page_data[name] = product
+
+            # Increment the page number for the next iteration
             page_number += 1
+
+            # Print the progress
             print(f"Scraping page {page_number} of {link}...")
+
+    # Return the final page_data dictionary
     return page_data
 
 
@@ -88,25 +113,34 @@ def main():
 
     # Scrape data from each link
     all_data = {}
-    print("Scraping data...")
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_link = {
-            executor.submit(scrape_and_add_data, link): link for link in links
-        }
-        for future in concurrent.futures.as_completed(future_to_link):
-            link = future_to_link[future]
-            try:
-                data = future.result()
-            except Exception as exc:
-                print(f"{link} generated an exception: {exc}")
-            else:
-                all_data.update(data)
+    for link in tqdm(links):
+        data = scrape_and_add_data(link)
+        for name, product in data.items():
+            all_data[name] = product
 
-    # Check for duplicates
-    print("Checking for duplicates...")
+    duplicate_check()
+
+    # Save data to file
+    with open("data/scraped_data.json", "w") as f:
+        json.dump(all_data, f, indent=2)
+
+
+def duplicate_check(file_path: str = "data/scraped_data.json"):
+    """
+    Check for duplicate products in the scraped data.
+
+    Args:
+        file_path (str): The path to the JSON file containing the scraped data.
+
+    Returns:
+        None
+    """
+    with open(file_path, "r") as f:
+        data = json.load(f)
+
     seen_names = set()
     duplicates = set()
-    for name in tqdm(all_data):
+    for name in tqdm(data):
         if name in seen_names:
             duplicates.add(name)
         else:
@@ -114,10 +148,6 @@ def main():
 
     if duplicates:
         print(f"Duplicate products found: {duplicates}")
-
-    # Save data to file
-    with open("data/scraped_data.json", "w") as f:
-        json.dump(all_data, f, indent=2)
 
 
 if __name__ == "__main__":
