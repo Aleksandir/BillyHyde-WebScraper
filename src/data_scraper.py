@@ -66,7 +66,7 @@ def scrape_data_from_link(url: str, pbar: tqdm) -> dict[str, Product]:
             # Use the name as the key for the dictionary
             page_product_info[name] = data
 
-        # use update instead of append to avoid duplicates
+        # use update instead of append to avoid duplicates after each page
         all_data.update(page_product_info)
 
         # Update the progress bar
@@ -125,7 +125,7 @@ def main():
     # Close the progress bar
     pbar.close()
 
-    # Save data to file
+    # Save data to file at the very end
     with open("data/scraped_data.json", "w") as f:
         json.dump(all_data, f, indent=2)
 
