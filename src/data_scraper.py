@@ -16,6 +16,9 @@ class Product:
         return f"<Product name={self.name} price={self.price} sku={self.sku} url={self.url}>"
 
 
+MAX_PRODUCTS_PER_PAGE = 48
+
+
 def scrape_data(url: str) -> tuple[dict[str, Product], bool]:
     """
     Scrapes data from a given URL and returns a tuple containing a dictionary of product information and a boolean indicating if there is a next page.
@@ -26,7 +29,7 @@ def scrape_data(url: str) -> tuple[dict[str, Product], bool]:
     Returns:
         tuple[dict[str, Product], bool]: A tuple containing a dictionary of product information and a boolean indicating if there is a next page.
     """
-    # https://billyhydemusic.com.au/product-category/guitar-bass?p=2&product_list_limit=36
+    # https://billyhydemusic.com.au/product-category/guitar-bass?p=2&product_list_limit=48
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -55,7 +58,7 @@ def scrape_data(url: str) -> tuple[dict[str, Product], bool]:
     return page_product_info, next_page
 
 
-LINK_MANIPULATION = "?p=120&product_list_limit=36"
+# LINK_MANIPULATION = "?p=120&product_list_limit=" + str(MAX_PRODUCTS_PER_PAGE)
 
 
 def scrape_and_add_data(link):
@@ -86,7 +89,7 @@ def scrape_and_add_data(link):
         while next_page_exist:
             # Call the scrape_data function with the URL of the next page
             data, next_page_exist = scrape_data(
-                link + f"?p={page_number}&product_list_limit=36"
+                link + f"?p={page_number}&product_list_limit={MAX_PRODUCTS_PER_PAGE}"
             )
 
             # Iterate over the data dictionary and add each name and product to the page_data dictionary
