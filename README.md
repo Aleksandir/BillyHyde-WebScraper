@@ -29,3 +29,12 @@ python src/data_scraper.py
 ```
 
 This will create a `scraped_data.json` file in the `data` directory.
+
+3. Use the `data_tools.py` script to analyze and present information about the scraped data:
+
+```
+python src/data_tools.py
+
+```
+
+This script reads the `scraped_data.json` file from the `data` directory and provides various insights about the data, such as the product with the highest price.
