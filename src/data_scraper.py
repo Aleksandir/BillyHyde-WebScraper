@@ -103,6 +103,39 @@ def scrape_and_add_data(link):
     return page_data
 
 
+def duplicate_check(file_path: str = "data/scraped_data.json"):
+    """
+    Check for duplicate products in the scraped data.
+
+    Args:
+        file_path (str): The path to the JSON file containing the scraped data.
+
+    Returns:
+        None
+    """
+    # bug: currently does not seem to pickup duplicates
+    with open(file_path, "r") as f:
+        data = json.load(f)
+
+    if not data:
+        print("No data found.")
+        return
+
+    seen_names = set()
+    duplicates = set()
+    for name in tqdm(data):
+        print(name)
+        if name in seen_names:
+            duplicates.add(name)
+        else:
+            seen_names.add(name)
+
+    if duplicates:
+        print(f"Duplicate products found: {duplicates}")
+    else:
+        print("No duplicate products found.")
+
+
 def main():
     # todo: for each link in links.txt, find the number of pages so that tqdm can be used
     # todo: for each page where the number is checked, save the soup to a file so that another request doesn't have to be made
@@ -118,40 +151,11 @@ def main():
         for name, product in data.items():
             all_data[name] = product
 
-    duplicate_check()
+    # duplicate_check()
 
     # Save data to file
     with open("data/scraped_data.json", "w") as f:
         json.dump(all_data, f, indent=2)
-
-
-def duplicate_check(file_path: str = "data/scraped_data.json"):
-    """
-    Check for duplicate products in the scraped data.
-
-    Args:
-        file_path (str): The path to the JSON file containing the scraped data.
-
-    Returns:
-        None
-    """
-    # bug: currently does not seem to pickup duplicates
-    with open(file_path, "r") as f:
-        data = json.load(f)
-
-    seen_names = set()
-    duplicates = set()
-    for name in tqdm(data):
-        print(name)
-        if name in seen_names:
-            duplicates.add(name)
-        else:
-            seen_names.add(name)
-
-    if duplicates:
-        print(f"Duplicate products found: {duplicates}")
-    else:
-        print("No duplicate products found.")
 
 
 if __name__ == "__main__":
