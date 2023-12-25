@@ -103,9 +103,6 @@ def get_total_pages(url: str) -> int:
 
 
 def main():
-    # todo: for each link in links.txt, find the number of pages so that tqdm can be used
-    # todo: for each page where the number is checked, save the soup to a file so that another request doesn't have to be made
-
     # Load links from file
     with open("src/links.txt", "r") as f:
         links = [line.strip() for line in f]
