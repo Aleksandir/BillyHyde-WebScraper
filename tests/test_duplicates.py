@@ -4,6 +4,7 @@ import unittest
 from src.data_scraper import duplicate_check
 
 
+# todo: import the duplicate_check function from src.data_scraper
 class TestDuplicateCheck(unittest.TestCase):
     def test_no_duplicates(self):
         # Create a JSON file with no duplicate products

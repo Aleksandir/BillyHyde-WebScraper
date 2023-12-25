@@ -135,12 +135,14 @@ def duplicate_check(file_path: str = "data/scraped_data.json"):
     Returns:
         None
     """
+    # bug: currently does not seem to pickup duplicates
     with open(file_path, "r") as f:
         data = json.load(f)
 
     seen_names = set()
     duplicates = set()
     for name in tqdm(data):
+        print(name)
         if name in seen_names:
             duplicates.add(name)
         else:
@@ -148,6 +150,8 @@ def duplicate_check(file_path: str = "data/scraped_data.json"):
 
     if duplicates:
         print(f"Duplicate products found: {duplicates}")
+    else:
+        print("No duplicate products found.")
 
 
 if __name__ == "__main__":
