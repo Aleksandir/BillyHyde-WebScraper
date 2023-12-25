@@ -19,3 +19,7 @@ def max_price():
 
 def main():
     pprint.pprint(max_price())
+
+
+if __name__ == "__main__":
+    main()
