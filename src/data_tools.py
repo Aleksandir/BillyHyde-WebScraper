@@ -21,7 +21,7 @@ def min_price():
     with open("data/scraped_data.json", "r") as f:
         data = json.load(f)
 
-    min_price = 1
+    min_price = 99
     min_product = None
 
     for _, product in data.items():
@@ -40,10 +40,10 @@ def total_number_of_products():
 
 
 def main():
-    pprint.pprint(f"highest price product: {max_price()}\n")
-
-    pprint.pprint(f"lowest price product: {min_price()}\n")
-
+    pprint.pprint(f"highest price product: {max_price()}")
+    print()
+    pprint.pprint(f"lowest price product: {min_price()}")
+    print()
     print(f"total number of products: {total_number_of_products()}")
 
 
