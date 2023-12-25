@@ -1,4 +1,5 @@
 import json
+import math
 
 import requests
 from bs4 import BeautifulSoup
@@ -16,127 +17,89 @@ class Product:
         return f"<Product name={self.name} price={self.price} sku={self.sku} url={self.url}>"
 
 
-MAX_PRODUCTS_PER_PAGE = 48
+MAX_PRODUCTS_PER_PAGE = 36
 
 
-def scrape_data(url: str) -> tuple[dict[str, Product], bool]:
+def scrape_data_from_link(url: str, pbar: tqdm) -> dict[str, Product]:
     """
-    Scrapes data from a given URL and returns a tuple containing a dictionary of product information and a boolean indicating if there is a next page.
+    Scrapes data from a given URL by iterating through paginated pages.
 
     Args:
-        url (str): The URL to scrape data from.
+        url (str): The base URL to scrape data from.
+        pbar (tqdm): The progress bar object to update.
 
     Returns:
-        tuple[dict[str, Product], bool]: A tuple containing a dictionary of product information and a boolean indicating if there is a next page.
+        dict[str, Product]: A dictionary containing the scraped data, where the key is the product name and the value is a dictionary of product information.
     """
     # https://billyhydemusic.com.au/product-category/guitar-bass?p=2&product_list_limit=48
+
+    all_data = {}
+    base_url = url  # Save the base URL before the loop
+    page_product_info = {}
+    print(f"Scraping data from {base_url}")
+    print(f"Total pages: {get_total_pages(base_url)}")
+
+    for page_number in range(1, get_total_pages(base_url) + 1):
+        paginated_url = (
+            f"{base_url}?p={page_number}&product_list_limit={MAX_PRODUCTS_PER_PAGE}"
+        )
+        response = requests.get(paginated_url)
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        for Product in soup.find_all("div", {"class": "product-item-info"}):
+            name = (
+                Product.find("span", {"class": "product-name"}).find("a").text.strip()
+            )
+            price = Product.find("span", {"class": "price"}).text.strip()
+            sku = Product.find("span", {"class": "product-sku"}).text.strip()
+            product_url = Product.find("span", {"class": "product-name"}).find("a")[
+                "href"
+            ]
+
+            data = {
+                "name": name,
+                "price": price,
+                "sku": sku,
+                "url": product_url,
+            }
+
+            # Use the name as the key for the dictionary
+            page_product_info[name] = data
+
+        # use update instead of append to avoid duplicates
+        all_data.update(page_product_info)
+
+        # Update the progress bar
+        pbar.update()
+
+    return page_product_info
+
+
+def get_total_pages(url: str) -> int:
+    """
+    Gets the total number of pages for a given URL.
+
+    Args:
+        url (str): The URL to get the total number of pages for.
+
+    Returns:
+        int: The total number of pages for the given URL.
+    """
+    # Get the response from the URL
     response = requests.get(url)
+
+    # Create a BeautifulSoup object from the response
     soup = BeautifulSoup(response.text, "html.parser")
 
-    page_product_info = {}
-    for Product in soup.find_all("div", {"class": "product-item-info"}):
-        name = Product.find("span", {"class": "product-name"}).find("a").text.strip()
-        price = Product.find("span", {"class": "price"}).text.strip()
-        sku = Product.find("span", {"class": "product-sku"}).text.strip()
-        url = Product.find("span", {"class": "product-name"}).find("a")["href"]
+    # Get the total number of products
+    total_products = soup.find_all("span", {"class": "toolbar-number"})
+    last_number = int(total_products[-1].text)
 
-        data = {
-            "name": name,
-            "price": price,
-            "sku": sku,
-            "url": url,
-        }
+    # Calculate the total number of pages
+    total_pages = math.ceil(last_number / MAX_PRODUCTS_PER_PAGE)
 
-        # Use the name as the key for the dictionary
-        page_product_info[name] = data
-
-    # Check if there is a next page
-    next_page = False
-    if soup.find("a", {"class": "action next"}):
-        next_page = True
-
-    return page_product_info, next_page
-
-
-# LINK_MANIPULATION = "?p=120&product_list_limit=" + str(MAX_PRODUCTS_PER_PAGE)
-
-
-def scrape_and_add_data(link):
-    """
-    Scrapes data from a given link and adds it to a dictionary.
-
-    Args:
-        link (str): The URL of the webpage to scrape.
-
-    Returns:
-        dict: A dictionary containing the scraped data, where the keys are the names and the values are the products.
-    """
-    # Call the scrape_data function to get the initial data and check if there is a next page
-    data, next_page_exist = scrape_data(link)
-
-    # Create an empty dictionary to store the scraped data
-    page_data = {}
-
-    # Iterate over the data dictionary and add each name and product to the page_data dictionary
-    for name, product in data.items():
-        page_data[name] = product
-
-    # Check if there is a next page
-    if next_page_exist:
-        page_number = 2
-
-        # Continue scraping until there are no more pages
-        while next_page_exist:
-            # Call the scrape_data function with the URL of the next page
-            data, next_page_exist = scrape_data(
-                link + f"?p={page_number}&product_list_limit={MAX_PRODUCTS_PER_PAGE}"
-            )
-
-            # Iterate over the data dictionary and add each name and product to the page_data dictionary
-            for name, product in data.items():
-                page_data[name] = product
-
-            # Increment the page number for the next iteration
-            page_number += 1
-
-            # Print the progress
-            print(f"Scraping page {page_number} of {link}...")
-
-    # Return the final page_data dictionary
-    return page_data
-
-
-def duplicate_check(file_path: str = "data/scraped_data.json"):
-    """
-    Check for duplicate products in the scraped data.
-
-    Args:
-        file_path (str): The path to the JSON file containing the scraped data.
-
-    Returns:
-        None
-    """
-    # bug: currently does not seem to pickup duplicates
-    with open(file_path, "r") as f:
-        data = json.load(f)
-
-    if not data:
-        print("No data found.")
-        return
-
-    seen_names = set()
-    duplicates = set()
-    for name in tqdm(data):
-        print(name)
-        if name in seen_names:
-            duplicates.add(name)
-        else:
-            seen_names.add(name)
-
-    if duplicates:
-        print(f"Duplicate products found: {duplicates}")
-    else:
-        print("No duplicate products found.")
+    # Return the total number of pages
+    return total_pages
 
 
 def main():
@@ -147,14 +110,23 @@ def main():
     with open("src/links.txt", "r") as f:
         links = [line.strip() for line in f]
 
+    # Get the total number of pages for each link to allow tqdm to be used
+    pages_count = 0
+    for link in links:
+        pages_count += get_total_pages(link)
+
+    # Create a tqdm progress bar
+    pbar = tqdm(total=pages_count)
+
     # Scrape data from each link
     all_data = {}
-    for link in tqdm(links):
-        data = scrape_and_add_data(link)
+    for link in links:
+        data = scrape_data_from_link(link, pbar)
         for name, product in data.items():
             all_data[name] = product
 
-    # duplicate_check()
+    # Close the progress bar
+    pbar.close()
 
     # Save data to file
     with open("data/scraped_data.json", "w") as f:
