@@ -1,6 +1,8 @@
 import json
 import pprint
 
+import matplotlib.pyplot as plt
+
 
 def max_price():
     with open("data/scraped_data.json", "r") as f:
@@ -51,6 +53,21 @@ def average_price():
     return round(total_price / len(data), 2)
 
 
+def plot_prices():
+    with open("data/scraped_data.json", "r") as f:
+        data = json.load(f)
+
+    prices = [
+        float(product["price"].strip("$").replace(",", ""))
+        for _, product in data.items()
+    ]
+
+    plt.scatter(range(len(prices)), prices, s=10)
+    plt.ylabel("Price")
+    plt.xlabel("Product Index")  # Add label for the x-axis
+    plt.show()
+
+
 def main():
     # pretty print does not work with newlines, used print instead, continued for consistency
     pprint.pprint(f"highest price product: {max_price()}")
@@ -60,6 +77,8 @@ def main():
     print(f"total number of products: {total_number_of_products()}")
     print()
     print(f"Average price: ${average_price()}")
+    print()
+    plot_prices()
 
 
 if __name__ == "__main__":
