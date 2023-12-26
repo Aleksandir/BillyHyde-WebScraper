@@ -1,91 +1,105 @@
 import json
-import pprint
 
 import matplotlib.pyplot as plt
 
 
-def max_price():
-    with open("data/scraped_data.json", "r") as f:
-        data = json.load(f)
+class DataAnalyzer:
+    def __init__(self, data_file):
+        with open(data_file, "r") as f:
+            self.data = json.load(f)
 
-    max_price = 0
-    max_product = None
+    def max_price(self):
+        """
+        Finds the product with the maximum price in the scraped data.
 
-    for _, product in data.items():
-        if float(product["price"].strip("$").replace(",", "")) > float(max_price):
-            max_price = product["price"].strip("$").replace(",", "")
-            max_product = product
+        Returns:
+            dict: The product with the maximum price.
+        """
+        with open("data/scraped_data.json", "r") as f:
+            data = json.load(f)
 
-    return max_product
+        max_price = 0
+        max_product = None
 
+        for _, product in data.items():
+            if float(product["price"].strip("$").replace(",", "")) > float(max_price):
+                max_price = product["price"].strip("$").replace(",", "")
+                max_product = product
 
-def min_price():
-    with open("data/scraped_data.json", "r") as f:
-        data = json.load(f)
+        return max_product
 
-    min_price = 99
-    min_product = None
+    def min_price(self):
+        with open("data/scraped_data.json", "r") as f:
+            data = json.load(f)
 
-    for _, product in data.items():
-        if float(product["price"].strip("$").replace(",", "")) < float(min_price):
-            min_price = product["price"].strip("$").replace(",", "")
-            min_product = product
+        min_price = 99
+        min_product = None
 
-    return min_product
+        for _, product in data.items():
+            if float(product["price"].strip("$").replace(",", "")) < float(min_price):
+                min_price = product["price"].strip("$").replace(",", "")
+                min_product = product
 
+        return min_product
 
-def total_number_of_products():
-    with open("data/scraped_data.json", "r") as f:
-        data = json.load(f)
+    def total_number_of_products(self):
+        return len(self.data)
 
-    return len(data)
+    def average_price(self):
+        with open("data/scraped_data.json", "r") as f:
+            data = json.load(f)
 
+        total_price = 0
 
-def average_price():
-    with open("data/scraped_data.json", "r") as f:
-        data = json.load(f)
+        for _, product in data.items():
+            total_price += float(product["price"].strip("$").replace(",", ""))
 
-    total_price = 0
+        return round(total_price / len(data), 2)
 
-    for _, product in data.items():
-        total_price += float(product["price"].strip("$").replace(",", ""))
+    def plot_prices(self):
+        with open("data/scraped_data.json", "r") as f:
+            data = json.load(f)
 
-    return round(total_price / len(data), 2)
+        prices = []
+        for _, product in data.items():
+            prices.append(float(product["price"].strip("$").replace(",", "")))
 
+        average = self.average_price()
 
-def plot_prices():
-    with open("data/scraped_data.json", "r") as f:
-        data = json.load(f)
-
-    prices = []
-    for _, product in data.items():
-        prices.append(float(product["price"].strip("$").replace(",", "")))
-
-    average = average_price()
-
-    plt.figure(figsize=(10, 6))  # Adjust the width and height as needed
-    plt.scatter(range(len(prices)), prices)
-    plt.axhline(y=average, color="r", linestyle="--")
-    plt.xlabel("Product")
-    plt.ylabel("Price")
-    plt.title("Product Prices")
-    plt.text(
-        0, average, f"Average Price: ${average}", ha="center", va="bottom", color="r"
-    )
-    plt.show()
+        plt.figure(figsize=(10, 6))  # Adjust the width and height as needed
+        plt.scatter(range(len(prices)), prices)
+        plt.axhline(y=average, color="r", linestyle="--")
+        plt.xlabel("Product")
+        plt.ylabel("Price")
+        plt.title("Product Prices")
+        plt.text(0, average, f"Average Price: ${average}", ha="center", va="bottom", color="r")
+        plt.show()
 
 
 def main():
-    # pretty print does not work with newlines, used print instead, continued for consistency
-    pprint.pprint(f"highest price product: {max_price()}")
+    analyzer = DataAnalyzer("data/scraped_data.json")
+    max_product = analyzer.max_price()
+    min_product = analyzer.min_price()
+    total_products = analyzer.total_number_of_products()
+    average_price = analyzer.average_price()
+
+    print("Product with Maximum Price:")
+    print(max_product)
     print()
-    pprint.pprint(f"lowest price product: {min_price()}")
+
+    print("Product with Minimum Price:")
+    print(min_product)
     print()
-    print(f"total number of products: {total_number_of_products()}")
+
+    print("Total Number of Products:")
+    print(total_products)
     print()
-    print(f"Average price: ${average_price()}")
+
+    print("Average Price:")
+    print(average_price)
     print()
-    plot_prices()
+
+    analyzer.plot_prices()
 
 
 if __name__ == "__main__":
