@@ -4,16 +4,35 @@ import matplotlib.pyplot as plt
 
 
 class DataAnalyzer:
+    """
+    A class for analyzing data from a JSON file.
+
+    Args:
+        data_file (str): The path to the JSON file containing the data.
+
+    Attributes:
+        data (dict): The loaded data from the JSON file.
+
+    Methods:
+        max_price: Returns the product with the maximum price.
+        min_price: Returns the product with the minimum price.
+        total_number_of_products: Returns the total number of products.
+        average_price: Returns the average price of all products.
+        plot_prices: Plots a scatter plot of product prices.
+
+    """
+
     def __init__(self, data_file):
         with open(data_file, "r") as f:
             self.data = json.load(f)
 
     def max_price(self):
         """
-        Finds the product with the maximum price in the scraped data.
+        Returns the product with the maximum price.
 
         Returns:
             dict: The product with the maximum price.
+
         """
         with open("data/scraped_data.json", "r") as f:
             data = json.load(f)
@@ -29,6 +48,13 @@ class DataAnalyzer:
         return max_product
 
     def min_price(self):
+        """
+        Returns the product with the minimum price.
+
+        Returns:
+            dict: The product with the minimum price.
+
+        """
         with open("data/scraped_data.json", "r") as f:
             data = json.load(f)
 
@@ -43,9 +69,23 @@ class DataAnalyzer:
         return min_product
 
     def total_number_of_products(self):
+        """
+        Returns the total number of products.
+
+        Returns:
+            int: The total number of products.
+
+        """
         return len(self.data)
 
     def average_price(self):
+        """
+        Returns the average price of all products.
+
+        Returns:
+            float: The average price.
+
+        """
         with open("data/scraped_data.json", "r") as f:
             data = json.load(f)
 
@@ -57,6 +97,10 @@ class DataAnalyzer:
         return round(total_price / len(data), 2)
 
     def plot_prices(self):
+        """
+        Plots a scatter plot of product prices.
+
+        """
         with open("data/scraped_data.json", "r") as f:
             data = json.load(f)
 
