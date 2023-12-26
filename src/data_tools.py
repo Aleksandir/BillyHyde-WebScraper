@@ -57,14 +57,21 @@ def plot_prices():
     with open("data/scraped_data.json", "r") as f:
         data = json.load(f)
 
-    prices = [
-        float(product["price"].strip("$").replace(",", ""))
-        for _, product in data.items()
-    ]
+    prices = []
+    for _, product in data.items():
+        prices.append(float(product["price"].strip("$").replace(",", "")))
 
-    plt.scatter(range(len(prices)), prices, s=10)
+    average = average_price()
+
+    plt.figure(figsize=(10, 6))  # Adjust the width and height as needed
+    plt.scatter(range(len(prices)), prices)
+    plt.axhline(y=average, color="r", linestyle="--")
+    plt.xlabel("Product")
     plt.ylabel("Price")
-    plt.xlabel("Product Index")  # Add label for the x-axis
+    plt.title("Product Prices")
+    plt.text(
+        0, average, f"Average Price: ${average}", ha="center", va="bottom", color="r"
+    )
     plt.show()
 
 
