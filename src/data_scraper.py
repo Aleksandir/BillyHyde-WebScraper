@@ -17,62 +17,61 @@ class Product:
         return f"<Product name={self.name} price={self.price} sku={self.sku} url={self.url}>"
 
 
-MAX_PRODUCTS_PER_PAGE = 36
+def create_product_from_div(product_div):
+    """
+    Create a Product object from a given product_div.
+
+    Args:
+        product_div (BeautifulSoup): The BeautifulSoup object representing the product_div.
+
+    Returns:
+        Product: The created Product object.
+
+    """
+    name = product_div.find("span", {"class": "product-name"}).find("a").text.strip()
+    price = product_div.find("span", {"class": "price"}).text.strip()
+    sku = product_div.find("span", {"class": "product-sku"}).text.strip()
+    product_url = product_div.find("span", {"class": "product-name"}).find("a")["href"]
+    return Product(name, price, sku, product_url)
 
 
 def scrape_data_from_link(url: str, pbar: tqdm) -> dict[str, Product]:
     """
-    Scrapes data from a given URL by iterating through paginated pages.
+    Scrapes data from a given URL and returns a dictionary of products.
 
     Args:
-        url (str): The base URL to scrape data from.
+        url (str): The URL to scrape data from.
         pbar (tqdm): The progress bar object to update.
 
     Returns:
-        dict[str, Product]: A dictionary containing the scraped data, where the key is the product name and the value is a dictionary of product information.
+        dict[str, Product]: A dictionary containing the scraped product data.
     """
-    # https://billyhydemusic.com.au/product-category/guitar-bass?p=2&product_list_limit=48
-
     all_data = {}
-    base_url = url  # Save the base URL before the loop
+    base_url = url
     page_product_info = {}
-    print(f"Scraping data from {base_url}")
-    print(f"Total pages: {get_total_pages(base_url)}")
+    total_pages = get_total_pages(base_url)
 
-    for page_number in range(1, get_total_pages(base_url) + 1):
-        paginated_url = (
-            f"{base_url}?p={page_number}&product_list_limit={MAX_PRODUCTS_PER_PAGE}"
-        )
+    print(f"Scraping data from {base_url}")
+    print(f"Total pages: {total_pages}")
+
+    for page_number in range(1, total_pages + 1):
+        paginated_url = f"{base_url}?p={page_number}&product_list_limit={MAX_PRODUCTS_PER_PAGE}"
         response = requests.get(paginated_url)
+
+        if response.status_code != 200:
+            print(f"Failed to get data from {paginated_url}")
+            continue
+
         soup = BeautifulSoup(response.text, "html.parser")
 
-        for Product in soup.find_all("div", {"class": "product-item-info"}):
-            name = (
-                Product.find("span", {"class": "product-name"}).find("a").text.strip()
-            )
-            price = Product.find("span", {"class": "price"}).text.strip()
-            sku = Product.find("span", {"class": "product-sku"}).text.strip()
-            product_url = Product.find("span", {"class": "product-name"}).find("a")[
-                "href"
-            ]
+        for product_div in soup.find_all("div", {"class": "product-item-info"}):
+            product = create_product_from_div(product_div)
+            page_product_info[product.name] = product
 
-            data = {
-                "name": name,
-                "price": price,
-                "sku": sku,
-                "url": product_url,
-            }
-
-            # Use the name as the key for the dictionary
-            page_product_info[name] = data
-
-        # use update instead of append to avoid duplicates after each page
         all_data.update(page_product_info)
-
-        # Update the progress bar
         pbar.update()
 
-    return page_product_info
+    return all_data
 
 
 def get_total_pages(url: str) -> int:
@@ -85,6 +84,7 @@ def get_total_pages(url: str) -> int:
     Returns:
         int: The total number of pages for the given URL.
     """
+    MAX_PRODUCTS_PER_PAGE = 36
     # Get the response from the URL
     response = requests.get(url)
 
