@@ -17,6 +17,9 @@ class Product:
         return f"<Product name={self.name} price={self.price} sku={self.sku} url={self.url}>"
 
 
+MAX_PRODUCTS_PER_PAGE = 36
+
+
 def create_product_from_div(product_div):
     """
     Create a Product object from a given product_div.
@@ -84,7 +87,6 @@ def get_total_pages(url: str) -> int:
     Returns:
         int: The total number of pages for the given URL.
     """
-    MAX_PRODUCTS_PER_PAGE = 36
     # Get the response from the URL
     response = requests.get(url)
 
