@@ -103,31 +103,33 @@ def get_total_pages(url: str) -> int:
 
 
 def main():
+    """
+    Main function to scrape data from links and save it to a JSON file.
+    """
     # Load links from file
-    with open("src/links.txt", "r") as f:
-        links = [line.strip() for line in f]
+    try:
+        with open("src/links.txt", "r") as f:
+            links = [line.strip() for line in f]
+    except FileNotFoundError:
+        print("Could not find the links file.")
+        return
 
     # Get the total number of pages for each link to allow tqdm to be used
-    pages_count = 0
-    for link in links:
-        pages_count += get_total_pages(link)
-
-    # Create a tqdm progress bar
-    pbar = tqdm(total=pages_count)
+    pages_count = sum(get_total_pages(link) for link in links)
 
     # Scrape data from each link
     all_data = {}
-    for link in links:
-        data = scrape_data_from_link(link, pbar)
-        for name, product in data.items():
-            all_data[name] = product
-
-    # Close the progress bar
-    pbar.close()
+    with tqdm(total=pages_count) as pbar:
+        for link in links:
+            data = scrape_data_from_link(link, pbar)
+            all_data.update(data)
 
     # Save data to file at the very end
-    with open("data/scraped_data.json", "w") as f:
-        json.dump(all_data, f, indent=2)
+    try:
+        with open("data/scraped_data.json", "w") as f:
+            json.dump(all_data, f, indent=2)
+    except IOError:
+        print("Could not write to the output file.")
 
 
 if __name__ == "__main__":
