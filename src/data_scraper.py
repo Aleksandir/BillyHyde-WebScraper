@@ -127,6 +127,10 @@ def main():
             all_data.update(data)
 
     # Save data to file at the very end
+    saveData(all_data)
+
+
+def saveData(all_data):
     try:
         with open("data/scraped_data.json", "w") as f:
             json.dump(all_data, f, indent=2)
