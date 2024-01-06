@@ -35,7 +35,9 @@ def create_product_from_div(product_div):
 
     """
     name = product_div.find("span", {"class": "product-name"}).find("a").text.strip()
+    name = name.replace(",", "-")
     price = product_div.find("span", {"class": "price"}).text.strip()
+    price = price.replace(",", "")
     sku = product_div.find("span", {"class": "product-sku"}).text.strip()
     product_url = product_div.find("span", {"class": "product-name"}).find("a")["href"]
     return Product(name, price, sku, product_url)
@@ -57,8 +59,9 @@ def scrape_data_from_link(url: str, pbar: tqdm) -> dict[str, Product]:
     page_product_info = {}
     total_pages = get_total_pages(base_url)
 
-    print(f"Scraping data from {base_url}")
-    print(f"Total pages: {total_pages}")
+    # Debugging
+    # print(f"Scraping data from {base_url}")
+    # print(f"Total pages: {total_pages}")
 
     for page_number in range(1, total_pages + 1):
         paginated_url = f"{base_url}?p={page_number}&product_list_limit={MAX_PRODUCTS_PER_PAGE}"
