@@ -16,6 +16,9 @@ class Product:
     def __repr__(self):
         return f"<Product name={self.name} price={self.price} sku={self.sku} url={self.url}>"
 
+    def to_dict(self):
+        return {"name": self.name, "price": self.price, "sku": self.sku, "url": self.url}
+
 
 MAX_PRODUCTS_PER_PAGE = 36
 
@@ -128,14 +131,26 @@ def main():
 
     # Save data to file at the very end
     saveData(all_data)
+    saveData(all_data, type="csv")
 
 
-def saveData(all_data):
-    try:
-        with open("data/scraped_data.json", "w") as f:
-            json.dump(all_data, f, indent=2)
-    except IOError:
-        print("Could not write to the output file.")
+def saveData(all_data, type="json"):
+    # Save data to json file
+    if type == "json":
+        try:
+            with open("data/scraped_data.json", "w") as f:
+                json.dump([product.to_dict() for product in all_data.values()], f, indent=2)
+        except IOError:
+            print("Could not write to the output file.")
+
+    # Save data to csv file
+    elif type == "csv":
+        try:
+            with open("data/scraped_data.csv", "w") as f:
+                for product in all_data.values():
+                    f.write(f"{product.name},{product.price},{product.sku},{product.url}\n")
+        except IOError:
+            print("Could not write to the output file.")
 
 
 if __name__ == "__main__":
