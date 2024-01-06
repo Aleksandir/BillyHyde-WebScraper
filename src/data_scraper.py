@@ -36,10 +36,13 @@ def create_product_from_div(product_div):
     """
     name = product_div.find("span", {"class": "product-name"}).find("a").text.strip()
     name = name.replace(",", "-")
+
     price = product_div.find("span", {"class": "price"}).text.strip()
     price = price.replace(",", "")
+
     sku = product_div.find("span", {"class": "product-sku"}).text.strip()
     product_url = product_div.find("span", {"class": "product-name"}).find("a")["href"]
+
     return Product(name, price, sku, product_url)
 
 
