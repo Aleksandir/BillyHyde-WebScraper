@@ -6,13 +6,13 @@ def scrape_links(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    links = []
-    # using data-color attribute to filter out specific links to increase efficiency
-    for link in soup.find_all("a", {"class": "nav-anchor", "data-color": "#ffffff"}):
-        href = link.get("href")
-        print(href)
-        if href and href.startswith("http"):
-            links.append(href)
+    # This list comprehension extracts all the href attributes from anchor tags (a) with class "nav-anchor" and data-color "#ffffff"
+    # It only includes those hrefs that start with "http", indicating they are complete URLs
+    links = [
+        link.get("href")
+        for link in soup.find_all("a", {"class": "nav-anchor", "data-color": "#ffffff"})
+        if link.get("href", "").startswith("http")
+    ]
 
     return links
 
